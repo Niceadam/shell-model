@@ -40,7 +40,7 @@ def showlevels(energies):
     return
     
 
-def create_basis(k, l, m):
+def create_basis_3D(k, l, m):
     """Creates 3D hamonic oscillator basis vectorized function: Radials + Spherical
     where v coefficient = 1  
     """
@@ -52,8 +52,8 @@ def create_basis(k, l, m):
     wave = lambda r, thet, phi: wave_rad0(r)*wave_rad1(r)*sp.sph_harm(m, l, thet, phi)
     return np.vectorize(wave)
 
-def create_radial(k, l):
-    """Creates 3D hamonic oscillator basis: Only Radials
+def create_radial_3D(k, l):
+    """Creates 3D hamonic oscillator basis: Only Laguerre Radials
     where v coefficient = 1
     """
     
@@ -63,6 +63,14 @@ def create_radial(k, l):
     
     wave = lambda r: wave_rad0(r)*wave_rad1(r)
     return np.vectorize(wave)
+
+def create_radial_1D(n):
+    """Creates 1D hamonic oscillator basis: Hermite
+    where m*w/hbar coefficient = 1
+    """
+    const = 1/np.sqrt(2**n * factorial(n) * np.sqrt(np.pi))
+    wave_rad = lambda x: const * np.exp(-x**2 / 2) * sp.eval_hermite(n, x)
+    return np.vectorize(wave_rad)
 
 #==============================================================================================
 # Routine that picks only those slater

@@ -113,7 +113,7 @@ def plot_energies(eigs):
     plt.title(r'$^{'+str(16+N_particles)+'}$'+'O', fontsize=20)
     plt.grid()
     
-def plot_radials(weights, slaters_m, labeler='Ground'):
+def plot_radials(weights, slaters_m, rlim=[0.01, 3], dim='1D', labeler='Ground'):
     """Given possible Slaters + CI weights c_i for each slater = Plot Radial Desntiy function
     
     Only 2 Radial Functions: 
@@ -126,18 +126,16 @@ def plot_radials(weights, slaters_m, labeler='Ground'):
     
     # Setup grid
     resol = 300 # resolution for the arrays used for plotting
-    r = np.linspace(0.01, 3, resol)
-    thet = np.linspace(0, np.pi, resol)
-    phi = np.pi/2
+    r = np.linspace(rlim[0], rlim[1], resol)
     
     # Evaluate orbital basis radials for each possible state
-    basis = [create_radial(n[k], l[k])(r) for k in range(N_sp)]
+    if dim.upper() == '3D':
+        basis = [create_radial_3D(n[k], l[k])(r) for k in range(N_sp)]
+    elif dim.upper() == '1D':
+        basis = [create_radial_1D(n[k])(r) for k in range(N_sp)]
     
-    # Total Density
+    # Final density = sum(weight[i]**2 * slater_dens[i])
     radial_dens = np.zeros(resol)
-    
-    # Iterate each Slater
-    # Final density = sum(weight[i] * slater_dens[i])
     for i, slate in enumerate(slaters_m):
         
         # Calculate Slater Density. You can't plot Slaters directly obviously!!
@@ -147,16 +145,15 @@ def plot_radials(weights, slaters_m, labeler='Ground'):
         # Add Slate density to Global Density with ground weight |c_i|^2
         radial_dens += weights[i]**2 * slate_den
 
-    
     plt.plot(r, radial_dens, label=labeler)
     
 #################################
 # Main Init
 
-N_particles, M_val = 3, 5
+N_particles, M_val = 6, 6
 eigs, vecs, slaters_m = main_eigen(N_particles, M_val)
 
-plot_radials(vecs[0], slaters_m, 'Ground')
+plot_radials(vecs[4], slaters_m, dim='1D', labeler='Ground')
 plt.xlabel('Radius (r)'); plt.ylabel('Density')
 plt.grid()
 plt.legend()
