@@ -1,0 +1,1 @@
+Plot radials using plot_radials(), choice between 1D and 3D harmonic oscillator given in parameter
