@@ -139,7 +139,6 @@ def plot_radials(weights, slaters_m, rlim=[0.01, 3], dim='1D', labeler='Ground')
     for i, slate in enumerate(slaters_m):
         
         # Calculate Slater Density. You can't plot Slaters directly obviously!!
-        slate_den = np.zeros(resol)
         slate_den = sum(basis[k-1]**2 for k in slate)
                         
         # Add Slate density to Global Density with ground weight |c_i|^2
@@ -148,12 +147,12 @@ def plot_radials(weights, slaters_m, rlim=[0.01, 3], dim='1D', labeler='Ground')
     plt.plot(r, radial_dens, label=labeler)
     
 #################################
-# Main Init
+# Main Function
 
-N_particles, M_val = 6, 6
+N_particles, M_val = 6, 8
 eigs, vecs, slaters_m = main_eigen(N_particles, M_val)
 
-plot_radials(vecs[4], slaters_m, dim='1D', labeler='Ground')
+plot_radials(vecs[0], slaters_m, dim='1D', labeler='Ground')
 plt.xlabel('Radius (r)'); plt.ylabel('Density')
 plt.grid()
 plt.legend()
