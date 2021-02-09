@@ -112,10 +112,9 @@ def plot_energies(eigs):
     plt.grid()
     
 def plot_radials(weights, slaters_m, rlim=[0.01, 3], dim='1D', labeler='Ground'):
-    """Given possible Slaters + CI weights c_i for each slater = Plot Radial Desntiy function
+    """Given possible Slaters + CI weights for each slater = Plot Radial Desntiy function
     
-    Only 2 Radial Functions: 
-        
+    Only 2 3D Radial Functions: 
         1d: n=0 l=2
         2s: n=1 l=0
     """
