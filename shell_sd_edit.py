@@ -25,8 +25,6 @@ j = sp_data[:,3].astype(int)
 m_j = sp_data[:,4].astype(int)
 sp_energies = sp_data[:,5]
 
-m_l = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
 # Load effective interactions from file 'shellint_sd.dat' ordered as (i,j,k,l,<ij|V|kl>
 int_data = np.loadtxt('input_data/shellint_sd.dat',skiprows=2,usecols=[0,1,2,3,4])
 
