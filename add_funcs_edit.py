@@ -68,6 +68,7 @@ def create_radial_1D(n):
     """Creates 1D hamonic oscillator basis: Hermite
     where m*w/hbar coefficient = 1
     """
+    
     const = 1/np.sqrt(2**n * factorial(n) * np.sqrt(np.pi))
     wave_rad = lambda x: const * np.exp(-x**2 / 2) * sp.eval_hermite(n, x)
     return np.vectorize(wave_rad)
