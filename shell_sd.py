@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from numpy import linalg
 from timeit import default_timer as timer
 
-from add_funcs_edit import *
+from add_funcs import *
 from read_lpt import read_lpt, read_lpt_exp
 
 # Load single-particle data from file 'sdshellint.dat' ordered as (index, n, l, 2j, 2m_j)
