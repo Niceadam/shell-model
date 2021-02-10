@@ -39,11 +39,11 @@ def main_eigen(N_particles, M_val):
     
     # N_paticles must be less than or equal to number of single-particle states)
     if N_particles > N_sp:
-        raise "Wrong input: Number of particles must be less than number of single-particle states"
+        raise "Number of particles must be less than number of single-particle states!"
     
     # total 2*M of the system must be same parity as number of particles
     if (N_particles & 1) != (M_val & 1):
-        raise 'Matching Parity'
+        raise 'Must match parity!'
     
     
     # Number of matrix elements of effective interaction + scaling factor
