@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy import linalg
 from timeit import default_timer as timer
+from tqdm import tqdm
 from add_funcs import *
 
 
@@ -26,12 +27,12 @@ sp_energies = sp_data[:,5]
 # Load effective interactions from file 'shellint_sd.dat' ordered as (i,j,k,l,<ij|V|kl>
 int_data = np.loadtxt('input_data/shellint_sd.dat',skiprows=2,usecols=[0,1,2,3,4])
 
-im = int_data[:,0]
-jm = int_data[:,1]
-km = int_data[:,2]
-lm = int_data[:,3]
+im = int_data[:,0].astype(int)
+jm = int_data[:,1].astype(int)
+km = int_data[:,2].astype(int)
+lm = int_data[:,3].astype(int)
 
-def main_eigen(N_particles, M_val, dim='1D'):    
+def main_eigen(N_particles, M_val):    
     """
     Returns Eigen-everything from CI for N particles and total angular momentum M"""
     
@@ -53,31 +54,34 @@ def main_eigen(N_particles, M_val, dim='1D'):
     slaters_m = create_slaters(N_sp, N_particles, m_j, M_val)
     N_slater = len(slaters_m)
     
-    if dim.upper() == '3D':
-        basis = [create_radial_3D(n[k], l[k]) for k in range(N_sp)]
-    elif dim.upper() == '1D':
-        basis = [create_radial_1D(n[k]) for k in range(N_sp)]
+    # Possible n values
+    poss_n = list(set(n))
+                  
+    # Create basis orbitals - (n=0, n=1)
+    basis = [create_radial_1D(n_i) for n_i in poss_n]
+    matrix_elem = create_matrix_elements(poss_n, basis)
     
     # Build Hamiltonian matrix
     H = np.zeros((N_slater, N_slater))
-    for i in range(N_slater):
+    for i in tqdm(range(N_slater)):
         slate = slaters_m[i]
         
         # Add single-particle energies to diagonal elements
         H[i,i] += slater_energy(slate, sp_energies)
         
         # Add matrix elements
-        for a in range(len(int_data)):
-            (k, sign) = two_body(im[a], jm[a], km[a], lm[a], slate, slaters_m)
-            matrix_element = calc_matrix_element(im[a], jm[a], km[a], lm[a])
-            
+        for i, j, k, l in zip(im, jm, km, lm):
+            (ind, sign) = two_body(i, j, k, l, slate, slaters_m)
+
             if sign != 0:
-                elem = sign * matrix_elements[a]
+                # Get matrix element for given config
+                config = np.sort(n[[i-1, j-1, k-1, l-1]])
+                elem = sign * matrix_elem[tuple(config)]
                 if k == i:
                     H[i,i] += elem
                 else:
-                    H[k,i] += elem
-                    H[i,k] += elem
+                    H[ind,i] += elem
+                    H[i,ind] += elem
     
     # Diagonalize the Hamiltonian matrix
     eigs, vecs = linalg.eig(H)
@@ -87,9 +91,9 @@ def main_eigen(N_particles, M_val, dim='1D'):
     
     
 def plot_radials(weights, slaters_m, basis, rlim=[0.01, 3], labeler='Ground'):
-    """Given possible Slaters + CI weights for each slater = Plot Radial Desntiy function
+    """Given possible Slaters + CI weights for each slater = Plot Radial Denstiy function
     
-    Only 2 3D Radial Functions: 
+    Only 2 Radial Functions: 
         1d: n=0 l=2
         2s: n=1 l=0
     """
@@ -106,7 +110,7 @@ def plot_radials(weights, slaters_m, basis, rlim=[0.01, 3], labeler='Ground'):
     for i, slate in enumerate(slaters_m):
         
         # Calculate Slater Density. You can't plot Slaters directly obviously!!
-        slate_den = sum(basis[k-1]**2 for k in slate)
+        slate_den = sum(basis[n[k-1]]**2 for k in slate)
                         
         # Add Slate density to Global Density with ground weight |c_i|^2
         radial_dens += weights[i]**2 * slate_den
@@ -116,10 +120,10 @@ def plot_radials(weights, slaters_m, basis, rlim=[0.01, 3], labeler='Ground'):
 #################################
 # Main Function
 
-N_particles, M_val = 6, 8
-eigs, vecs, slaters_m, basis = main_eigen(N_particles, M_val, dim='3D')
+N_particles, M_val = 8, 8
+eigs, vecs, slaters_m, basis = main_eigen(N_particles, M_val)
 
 plot_radials(vecs[0], slaters_m, basis, labeler='Ground')
-plt.xlabel('Radius (r)'); plt.ylabel('Density')
+plt.xlabel('Radius (r)'); plt.ylabel('Valence Density')
 plt.grid()
 plt.legend()

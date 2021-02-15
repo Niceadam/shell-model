@@ -11,6 +11,7 @@ from math import factorial
 from sympy.combinatorics.permutations import Permutation
 from read_lpt import read_lpt, read_lpt_exp
 
+dbl_quad = scipy.integrate.dblquad
 
 def permutator(array):
     """Finds signature of permutation and returns sorted array """
@@ -178,10 +179,18 @@ def two_body(i, j, k, l, slate, slaters_m):
         ind = len(slaters_m) + 10
         return (ind, 0)
 
-
-def calc_matrix_element(i, j, k, l):
-    #return scipy.integrate.quad()
-    pass
+def create_matrix_elements(poss_n, basis):
+    max_n = len(poss_n)
+    matrix_elem = dict()
+    
+    for i, j, k, l in itertools.combinations_with_replacement(poss_n, 4):
+        
+        inter = lambda x1, x2: basis[i](x1)*basis[j](x2) *\
+            np.exp(-(x1-x2)**2) * basis[k](x1)*basis[l](x2)
+            
+        matrix_elem[(i,j,k,l)] = dbl_quad(inter, 0,3,0,3)[0]
+    
+    return matrix_elem
 
 def slater_energy(slater, energies):
     """
