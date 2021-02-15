@@ -1,1 +1,1 @@
-Plot radials using `plot_radials(dim='1D')` with choice between 1D and 3D harmonic oscillator
+Plot radials using `plot_radials()`
