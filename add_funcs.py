@@ -4,9 +4,12 @@
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as plt2
 import scipy.special as sp
+import scipy.integrate
 from math import factorial
 from sympy.combinatorics.permutations import Permutation
+from read_lpt import read_lpt, read_lpt_exp
 
 
 def permutator(array):
@@ -148,37 +151,76 @@ def create_slaters(states_num, particles, m_j, M2):
     return slaters_pick
 
 
-def two_body(p, q, r, s, alpha, sd_pairs):
+def two_body(i, j, k, l, slate, slaters_m):
     """
      Function that takes two-body operator indices p,q,r,s and
-     index alpha for the ket Slater determinant and returns the index beta
-     of the new Slater determinant and the phase"""
+     slater and returns the index of the new Slater determinant and the phase"""
     
-    slate = sd_pairs[alpha]
-    if (r in slate) and (s in slate) and (p != q) and (r != s):  
-        if (p == r) and (q == s):
-            (sign, slater) = permutator(slate)
-        else:
-            # Replace the r- and s-values in alpha with p and q.
-            slater0 = np.copy(slate)
-            slater0[slate.index(s)] = q
-            slater0[slate.index(r)] = p
-            (sign, slater) = permutator(slater0)
-
+    if (k in slate) and (l in slate):       
+        
+        slater = np.copy(slate)
         try:
-            beta = sd_pairs.index(slater)
+            slater[slate.index(k)] = i
+            slater[slate.index(l)] = j
         except:
-            beta, sign = (0, 0)
-        return (beta, sign)
+            pass
+        
+        try:
+            (sign, slater) = permutator(slater)
+            ind = slaters_m.index(slater)
+            return ind, sign
+        except:
+            ind, sign = 0, 0
+            return ind, sign
     
     # New slater determinant is zero (set phase to zero and index to N_slater+10)
-    beta = len(sd_pairs) + 10
-    return (beta, 0)
+    else:
+        ind = len(slaters_m) + 10
+        return (ind, 0)
 
 
-def diag_element(slater, energies):
+def calc_matrix_element(i, j, k, l):
+    #return scipy.integrate.quad()
+    pass
+
+def slater_energy(slater, energies):
     """
      Function that calculates a diagonal element in the Hamiltonian
      by summing the single-particle energies of the Slater determinant"""
     
     return sum(energies[i-1] for i in slater)
+
+def plot_energies(eigs, N_particles):
+    """Gives the energy plot for given Eigen-energies"""
+    
+    
+    # Include only levels below mev_limit MeV
+    mev_lim = 6
+    min_energy = eigs.min()
+    E = eigs - min_energy
+    E = E[E<mev_lim]
+    
+    plt2.rc('xtick', labelsize=20)
+    plt2.rc('ytick', labelsize=20)
+    
+    if (N_particles % 2) == 0:
+       # Compare with NushellX levels
+       E_nu = read_lpt(N_particles)
+       E_nu = E_nu[E_nu<mev_lim]
+    
+       E_exp = read_lpt_exp(N_particles)
+       E_exp = E_exp[E_exp<mev_lim]
+    
+       for e in E_nu:
+           plt.plot([1.5,2.5],[e,e],'r')
+       for e in E_exp:
+           plt.plot([-1.5,-0.5],[e,e],'k')
+    
+    for e in E:
+    	plt.plot([0,1],[e,e],'b')
+    
+    plt.ylabel('Energy (MeV)', fontsize=20)
+    plt.xticks([-1,0.5,2.0],['Exp','Calc','NushellX'])
+    plt.ylim(-0.25, mev_lim)
+    plt.title(r'$^{'+str(16+N_particles)+'}$'+'O', fontsize=20)
+    plt.grid()
