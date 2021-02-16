@@ -179,16 +179,16 @@ def two_body(i, j, k, l, slate, slaters_m):
         ind = len(slaters_m) + 10
         return (ind, 0)
 
+def interact_func(x):
+    return np.exp(-x**2)
+
 def create_matrix_elements(poss_n, basis):
-    max_n = len(poss_n)
     matrix_elem = dict()
     
     for i, j, k, l in itertools.combinations_with_replacement(poss_n, 4):
         
-        inter = lambda x1, x2: basis[i](x1)*basis[j](x2) *\
-            np.exp(-(x1-x2)**2) * basis[k](x1)*basis[l](x2)
-            
-        matrix_elem[(i,j,k,l)] = dbl_quad(inter, 0,3,0,3)[0]
+        inter = lambda x1, x2: basis[i](x1)*basis[j](x2)*interact_func(x2-x1)*basis[k](x1)*basis[l](x2)
+        matrix_elem[(i,j,k,l)] = dbl_quad(inter, 0,5,0,5)[0]
     
     return matrix_elem
 
@@ -198,6 +198,33 @@ def slater_energy(slater, energies):
      by summing the single-particle energies of the Slater determinant"""
     
     return sum(energies[i-1] for i in slater)
+
+def plot_radials(weights, slaters_m, basis, n, rlim=[0.01, 3], labeler='Ground'):
+    """Given possible Slaters + CI weights for each slater = Plot Radial Denstiy function
+    
+    Only 2 Radial Functions: 
+        1d: n=0 l=2
+        2s: n=1 l=0
+    """
+    
+    # Setup grid
+    resol = 300 # resolution for the arrays used for plotting
+    r = np.linspace(rlim[0], rlim[1], resol)
+    
+    # Evaluate orbital basis radials for each possible state
+    basis = [base(r) for base in basis]
+    
+    # Final density = sum(weight[i]**2 * slater_dens[i])
+    radial_dens = np.zeros(resol)
+    for i, slate in enumerate(slaters_m):
+        
+        # Calculate Slater Density. You can't plot Slaters directly obviously!!
+        slate_den = sum(basis[n[k-1]]**2 for k in slate)
+                        
+        # Add Slate density to Global Density with ground weight |c_i|^2
+        radial_dens += weights[i]**2 * slate_den
+
+    plt.plot(r, radial_dens, label=labeler)
 
 def plot_energies(eigs, N_particles):
     """Gives the energy plot for given Eigen-energies"""

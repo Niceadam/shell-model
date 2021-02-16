@@ -70,60 +70,37 @@ def main_eigen(N_particles, M_val):
         H[i,i] += slater_energy(slate, sp_energies)
         
         # Add matrix elements
-        for i, j, k, l in zip(im, jm, km, lm):
-            (ind, sign) = two_body(i, j, k, l, slate, slaters_m)
+        for a, (p, q, r, s) in enumerate(zip(im, jm, km, lm)):
+            (ind, sign) = two_body(p, q, r, s, slate, slaters_m)
 
             if sign != 0:
                 # Get matrix element for given config
-                config = np.sort(n[[i-1, j-1, k-1, l-1]])
+                config = np.sort(n[[p-1, q-1, r-1, s-1]])
+                
                 elem = sign * matrix_elem[tuple(config)]
-                if k == i:
+                #elem = sign * matrix_elements[a]
+                if ind == i:
                     H[i,i] += elem
                 else:
                     H[ind,i] += elem
                     H[i,ind] += elem
     
-    # Diagonalize the Hamiltonian matrix
+    # Diagonalize the Hamiltonian matrixs
     eigs, vecs = linalg.eig(H)
     vecs = vecs.T
     
     return eigs, vecs, slaters_m, basis
-    
-    
-def plot_radials(weights, slaters_m, basis, rlim=[0.01, 3], labeler='Ground'):
-    """Given possible Slaters + CI weights for each slater = Plot Radial Denstiy function
-    
-    Only 2 Radial Functions: 
-        1d: n=0 l=2
-        2s: n=1 l=0
-    """
-    
-    # Setup grid
-    resol = 300 # resolution for the arrays used for plotting
-    r = np.linspace(rlim[0], rlim[1], resol)
-    
-    # Evaluate orbital basis radials for each possible state
-    basis = [base(r) for base in basis]
-    
-    # Final density = sum(weight[i]**2 * slater_dens[i])
-    radial_dens = np.zeros(resol)
-    for i, slate in enumerate(slaters_m):
         
-        # Calculate Slater Density. You can't plot Slaters directly obviously!!
-        slate_den = sum(basis[n[k-1]]**2 for k in slate)
-                        
-        # Add Slate density to Global Density with ground weight |c_i|^2
-        radial_dens += weights[i]**2 * slate_den
-
-    plt.plot(r, radial_dens, label=labeler)
-    
 #################################
 # Main Function
 
-N_particles, M_val = 8, 8
+N_particles, M_val = 6, 8
 eigs, vecs, slaters_m, basis = main_eigen(N_particles, M_val)
 
-plot_radials(vecs[0], slaters_m, basis, labeler='Ground')
+plot_radials(vecs[0], slaters_m, basis, n, labeler='Ground')
 plt.xlabel('Radius (r)'); plt.ylabel('Valence Density')
 plt.grid()
 plt.legend()
+
+plt.figure()
+plt.plot(vecs[0]**2)
