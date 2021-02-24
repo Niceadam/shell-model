@@ -10,6 +10,7 @@ import scipy.integrate
 from math import factorial
 from sympy.combinatorics.permutations import Permutation
 from read_lpt import read_lpt, read_lpt_exp
+import copy
 
 dbl_quad = scipy.integrate.dblquad
 
@@ -152,17 +153,16 @@ def create_slaters(states_num, particles, m_j, M2):
     return slaters_pick
 
 
-def two_body(i, j, k, l, slate, slaters_m):
+def two_body(p, q, r, s, slate, slaters_m):
     """
      Function that takes two-body operator indices p,q,r,s and
      slater and returns the index of the new Slater determinant and the phase"""
     
-    if (k in slate) and (l in slate):       
-        
+    if (r in slate) and (s in slate):       
         slater = np.copy(slate)
         try:
-            slater[slate.index(k)] = i
-            slater[slate.index(l)] = j
+            slater[slate.index(r)] = p
+            slater[slate.index(s)] = q
         except:
             pass
         
@@ -174,30 +174,46 @@ def two_body(i, j, k, l, slate, slaters_m):
             ind, sign = 0, 0
             return ind, sign
     
-    # New slater determinant is zero (set phase to zero and index to N_slater+10)
+    # New slater determinant is zero
     else:
-        ind = len(slaters_m) + 10
-        return (ind, 0)
+        ind, sign = 0, 0
+        return ind, sign
+    
 
-def interact_func(x):
+def interact(x):
     return np.exp(-x**2)
 
-def create_matrix_elements(poss_n, basis):
-    matrix_elem = dict()
+def twobody_integral(i, j, k, l, basis):
+    '''Calculates <ij|V|kl> with quantum number n of each state'''
     
-    for i, j, k, l in itertools.combinations_with_replacement(poss_n, 4):
-        
-        inter = lambda x1, x2: basis[i](x1)*basis[j](x2)*interact_func(x2-x1)*basis[k](x1)*basis[l](x2)
-        matrix_elem[(i,j,k,l)] = dbl_quad(inter, 0,5,0,5)[0]
+    inter = lambda x1, x2: basis[i](x1)*basis[j](x2)*interact(x2-x1)*basis[k](x1)*basis[l](x2)
+    return dbl_quad(inter, 0,4,0,4)[0]
+
+def integrals_n(n, basis):
+    integrals = dict()
+    for config in itertools.combinations_with_replacement(set(n), 4):
+        integ = twobody_integral(*config, basis)
+        integrals[config] = integ
+    return integrals
+
+def create_matrix_elements(matrix_combs, basis, n):
+    '''Finds All matrix elements for each possible ijkl combination'''
+    
+    integrals = integrals_n(n, basis)
+    
+    matrix_elem = dict()
+    for comb in matrix_combs:
+        inder = tuple(sorted(n[comb-1]))
+        matrix_elem[tuple(comb)] = integrals[inder]
     
     return matrix_elem
-
-def slater_energy(slater, energies):
+        
+def slater_energy(slaters_m, energies):
     """
-     Function that calculates a diagonal element in the Hamiltonian
-     by summing the single-particle energies of the Slater determinant"""
+     Function that calculates th digaonal of the Hamiltonian
+     by summing the single-particle energies of the Slater determinants"""
     
-    return sum(energies[i-1] for i in slater)
+    return [sum(energies[i-1] for i in slate) for slate in slaters_m]
 
 def plot_radials(weights, slaters_m, basis, n, rlim=[0.01, 3], labeler='Ground'):
     """Given possible Slaters + CI weights for each slater = Plot Radial Denstiy function
@@ -228,7 +244,6 @@ def plot_radials(weights, slaters_m, basis, n, rlim=[0.01, 3], labeler='Ground')
 
 def plot_energies(eigs, N_particles):
     """Gives the energy plot for given Eigen-energies"""
-    
     
     # Include only levels below mev_limit MeV
     mev_lim = 6
