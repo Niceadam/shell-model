@@ -4,7 +4,6 @@
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as plt2
 import scipy.special as sp
 import scipy.integrate
 from math import factorial
@@ -24,7 +23,7 @@ def permutator(array):
     # Check parity
     arger = np.argsort(array)
     sign = Permutation(arger).signature()
-    return sign, tuple(np.sort(array))
+    return sign, np.sort(array)
     
 def showlevels(energies):
     """Plots the given eigen-energies"""    
@@ -150,37 +149,35 @@ def create_slaters(states_num, particles, m_j, M2):
        sum_m = sum(m_j[i-1] for i in slate)
        if sum_m == M2:
            slaters_pick.append(slate)     
-    return slaters_pick
+    return np.array(slaters_pick)
 
 
 def two_body(p, q, r, s, slate, slaters_m):
     """
-     Function that takes two-body operator indices p,q,r,s and
-     slater and returns the index of the new Slater determinant and the phase"""
+     Function that takes two-body operator indices <pq|rs> and
+     slater and returns the index where to insert matrix element and the phase"""
     
     if (r in slate) and (s in slate):       
         slater = np.copy(slate)
-        try:
-            slater[slate.index(r)] = p
-            slater[slate.index(s)] = q
-        except:
-            pass
         
-        try:
-            (sign, slater) = permutator(slater)
-            ind = slaters_m.index(slater)
-            return ind, sign
-        except:
-            ind, sign = 0, 0
-            return ind, sign
+        # a_p+ a_q+ a_r a_s|p>
+        slater[slate == r] = p
+        slater[slate == s] = q
+        
+        (sign, slater) = permutator(slater)    
+        if slater == []:
+            return 0, 0
+        else:
+            ind = (slaters_m == slater).all(axis=1).nonzero()[0]
+            return ind[0], sign
     
-    # New slater determinant is zero
+    # rs not in slater, so a_r,a_s|p> = 0
     else:
-        ind, sign = 0, 0
-        return ind, sign
+        return 0, 0
     
 
 def interact(x):
+    '''2-body Interaction function''' 
     return np.exp(-x**2)
 
 def twobody_integral(i, j, k, l, basis):
@@ -190,10 +187,10 @@ def twobody_integral(i, j, k, l, basis):
     return dbl_quad(inter, 0,4,0,4)[0]
 
 def integrals_n(n, basis):
+    
     integrals = dict()
     for config in itertools.combinations_with_replacement(set(n), 4):
-        integ = twobody_integral(*config, basis)
-        integrals[config] = integ
+        integrals[config] = twobody_integral(*config, basis)
     return integrals
 
 def create_matrix_elements(matrix_combs, basis, n):
@@ -201,10 +198,10 @@ def create_matrix_elements(matrix_combs, basis, n):
     
     integrals = integrals_n(n, basis)
     
-    matrix_elem = dict()
+    matrix_elem = []
     for comb in matrix_combs:
-        inder = tuple(sorted(n[comb-1]))
-        matrix_elem[tuple(comb)] = integrals[inder]
+        inder = tuple(np.sort(n[comb-1]))
+        matrix_elem.append(integrals[inder])
     
     return matrix_elem
         
@@ -213,7 +210,7 @@ def slater_energy(slaters_m, energies):
      Function that calculates th digaonal of the Hamiltonian
      by summing the single-particle energies of the Slater determinants"""
     
-    return [sum(energies[i-1] for i in slate) for slate in slaters_m]
+    return np.sum(energies[slaters_m-1], axis=1)
 
 def plot_radials(weights, slaters_m, basis, n, rlim=[0.01, 3], labeler='Ground'):
     """Given possible Slaters + CI weights for each slater = Plot Radial Denstiy function
@@ -250,9 +247,7 @@ def plot_energies(eigs, N_particles):
     min_energy = eigs.min()
     E = eigs - min_energy
     E = E[E<mev_lim]
-    
-    plt2.rc('xtick', labelsize=20)
-    plt2.rc('ytick', labelsize=20)
+
     
     if (N_particles % 2) == 0:
        # Compare with NushellX levels
