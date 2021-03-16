@@ -21,11 +21,11 @@ from add_main import *
 
 
 # Number of particles and Number of single-particle states
-N_particles = 5
-N_sp = 12
+N_particles = 4
+N_sp = 6
 
 # Quantum numbers and Basis
-n = np.arange(1, N_sp+1)
+n = np.arange(N_sp)
 basis = [Harmonic.basis(ni) for ni in n]
 sp_energies = np.array([Harmonic.energies(ni) for ni in n])
 
@@ -34,32 +34,20 @@ slaters_m = create_slaters(N_sp, N_particles)
 slater_energies = slater_energy(slaters_m, sp_energies)
 N_slater = len(slaters_m)
 
-sorter = np.argsort(slater_energies)
-slater_energies = slater_energies[sorter]
-slaters_m = slaters_m[sorter]
-
-# Create matrix combinations and elements
-matrix_combs = create_matrix_combs(n)
-matrix_elements = create_matrix_elements(matrix_combs, basis, n)
-
 # Build Hamiltonian matrix
 # Add single-particle energies to diagonal elements
 H = np.diag(slater_energies)
 
-for i, slate in tqdm(enumerate(slaters_m)):
-    # Add matrix elements: comb = <ij|kl>
-    for a, comb in enumerate(matrix_combs):
-        (ind, sign) = two_body(*comb, slate, slaters_m)
-        
-        if sign != 0:
-            elem = sign * matrix_elements[a]
-                
-            if ind == i:
-                H[i,i] += elem
-            else:
-                H[ind,i] += elem
-                H[i,ind] += elem
-
+for i, slate1 in tqdm(enumerate(slaters_m)):
+    for j, slate2 in enumerate(slaters_m[i:]):
+        comber = np.binary_repr(int(slate1, 2) ^ int(slate2, 2), N_sp)
+        if comber.count('1') == 4:
+            H[i,j] += matrix_element(comber, basis)
+ 
+# Symmetrize
+H += H.T - np.diag(H.diagonal())
+plt.imshow(H)
+          
 # Diagonalize the Hamiltonian matrixs
 eigs, vecs = linalg.eig(H)
 vecs = vecs.T

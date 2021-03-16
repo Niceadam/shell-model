@@ -97,7 +97,7 @@ def main_eigen(N_particles, M_val, data=True):
 #################################
 # Main Function
 
-N_particles, M_val = 3, 1
+N_particles, M_val = 6, 8
 eigs, vecs, slaters_m, basis = main_eigen(N_particles, M_val, data=True)
 eigs2, vecs2, slaters_m, basis = main_eigen(N_particles, M_val, data=False)
 
