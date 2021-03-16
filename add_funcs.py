@@ -168,8 +168,8 @@ def two_body(p, q, r, s, slate, slaters_m):
         if slater == []:
             return 0, 0
         else:
-            ind = (slaters_m == slater).all(axis=1).nonzero()[0]
-            return ind[0], sign
+            ind = (slaters_m == slater).all(axis=1).nonzero()[0][0]
+            return ind, sign
     
     # rs not in slater, so a_r,a_s|p> = 0
     else:
