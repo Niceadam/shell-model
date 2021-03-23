@@ -5,6 +5,7 @@ from itertools import combinations, product
 from sympy.utilities.iterables import multiset_permutations
 import scipy.special as sp
 from scipy.integrate import dblquad, quad
+from numpy import exp, pi, sqrt
 from tqdm import tqdm
 
 
@@ -12,8 +13,8 @@ from tqdm import tqdm
 
 # Parameters
 mw = 1
-lener = 4 # integration bound
-tol = 1e-3 # tolerance for integration
+lener = 5.2 # integration bound
+tol = 1e-6 # tolerance for integration
 
 @np.vectorize
 def harmonic_potential(x):
@@ -23,8 +24,8 @@ def harmonic_basis(n):
     """Creates 1D hamonic oscillator basis: Hermite
     """
     
-    normer = 1/np.sqrt(2**n * factorial(n)) * pow(mw/np.pi, 1/4)
-    wave_rad = lambda x: normer * np.exp(-mw*x**2 / 2) * sp.eval_hermite(n,np.sqrt(mw)*x)
+    normer = 1/sqrt(2**n * factorial(n)) * pow(mw/pi, 1/4)
+    wave_rad = lambda x: normer * exp(-mw*x**2 / 2) * sp.eval_hermite(n,sqrt(mw)*x)
     return np.vectorize(wave_rad)
 
 ########### Slater creation
@@ -39,7 +40,7 @@ def create_slaters(states_num, particles):
 
 def twobody_element(i, j, k, l, b):
     """<ij|kl> - <ij|lk> element"""
-    inter = lambda x1, x2: b[i](x1)*b[j](x2) *np.exp(-(x2-x1)**2)* (b[k](x1)*b[l](x2) - b[l](x1)*b[k](x2))
+    inter = lambda x1, x2: b[i](x1)*b[j](x2) *exp(-(x2-x1)**2)* (b[k](x1)*b[l](x2) - b[l](x1)*b[k](x2))
     return dblquad(inter, 0,lener,0,lener, epsabs=tol)[0]
 
 def create_elements2(N_sp, basis):
