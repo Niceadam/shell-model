@@ -1,28 +1,33 @@
 
 import numpy as np
 from math import factorial
-import itertools
-import scipy
-import scipy.special as sp
-import scipy.integrate
+from itertools import combinations, product
 from sympy.utilities.iterables import multiset_permutations
+import scipy.special as sp
+from scipy.integrate import dblquad, quad
+from tqdm import tqdm
 
-dbl_quad = scipy.integrate.dblquad
 
-class Harmonic:
-    def basis(n):
-        """Creates 1D hamonic oscillator basis: Hermite
-        where m*w/hbar = cc
-        """
-        mw = 1
+############### Harmonic Basis
+
+# Parameters
+mw = 1
+lener = 4 # integration bound
+tol = 1e-3 # tolerance for integration
+
+@np.vectorize
+def harmonic_potential(x):
+    return 0.5*mw*x**2
         
-        normer = 1/np.sqrt(2**n * factorial(n)) * pow(mw/np.pi, 1/4)
-        wave_rad = lambda x: normer * np.exp(-mw*x**2 / 2) * sp.eval_hermite(n,np.sqrt(mw)*x)
-        return np.vectorize(wave_rad)
+def harmonic_basis(n):
+    """Creates 1D hamonic oscillator basis: Hermite
+    """
     
-    def energies(n):
-        return n + 1/2
+    normer = 1/np.sqrt(2**n * factorial(n)) * pow(mw/np.pi, 1/4)
+    wave_rad = lambda x: normer * np.exp(-mw*x**2 / 2) * sp.eval_hermite(n,np.sqrt(mw)*x)
+    return np.vectorize(wave_rad)
 
+########### Slater creation
 def create_slaters(states_num, particles):
     """Creates possible slaters that add to given M value"""
     
@@ -30,23 +35,39 @@ def create_slaters(states_num, particles):
     nums = [''.join(x) for x in multiset_permutations(limer)]
     return nums
 
-def slater_energy(slaters_m, energies):
-    slater_energies = [sum(energies[[x == '1' for x in slate]]) for slate in slaters_m]
-    return np.array(slater_energies)
+########### 2-body elements
 
-def interact(x):
-    '''2-body Interaction function''' 
-    return np.exp(-x**2)
+def twobody_element(i, j, k, l, b):
+    """<ij|kl> - <ij|lk> element"""
+    inter = lambda x1, x2: b[i](x1)*b[j](x2) *np.exp(-(x2-x1)**2)* (b[k](x1)*b[l](x2) - b[l](x1)*b[k](x2))
+    return dblquad(inter, 0,lener,0,lener, epsabs=tol)[0]
 
-def integraler(i, j, k, l, b):
-    inter = lambda x1, x2: b[i](x1)*b[j](x2)*interact(x2-x1)*b[k](x1)*b[l](x2)
-    return dbl_quad(inter, 0,4,0,4)[0]
+def create_elements2(N_sp, basis):
+    elems = dict()
+    combers = list(combinations(range(N_sp), 2))
+    for ind, i in enumerate(tqdm(combers)):
+        for j in combers[ind:]:
+            elems[i+j] = twobody_element(*i, *j, basis)
+    return elems
 
-def matrix_element2(comber, basis, N_sp):
-    return 0
+########### 1-body elements
+def onebody_element(i, j, b):
+    """<i|t + v|j> element"""
+    
+    hterm = lambda x: b[i](x) * b[j](x) * (0.5*(2*j + 1 - x**2) + harmonic_potential(x))
+    return quad(hterm, 0,lener, epsabs=tol)[0]
 
-def matrix_element1(comber, basis, N_sp):
-    return 0
+def create_elements1(N_sp, basis):
+    elems = dict()
+    for i in tqdm(product(range(N_sp), repeat=2)):
+        elems[i] = onebody_element(*i, basis)
+    return elems
 
-def matrix_element0(comber, basis, N_sp):
-    return 0
+def slater_energ(elements0, slaters_m):
+    new = []
+    for slater in slaters_m:
+        booler = [bool(int(x)) for x in slater]
+        sumer = sum(elements0[booler])
+        new.append(sumer)
+    
+    return np.array(new)

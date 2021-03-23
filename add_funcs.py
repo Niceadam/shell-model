@@ -10,6 +10,7 @@ from math import factorial
 from sympy.combinatorics.permutations import Permutation
 from read_lpt import read_lpt, read_lpt_exp
 import copy
+from tqdm import tqdm
 
 dbl_quad = scipy.integrate.dblquad
 
@@ -199,7 +200,7 @@ def create_matrix_elements(matrix_combs, basis, n):
     integrals = integrals_n(n, basis)
     
     matrix_elem = []
-    for comb in matrix_combs:
+    for comb in tqdm(matrix_combs):
         inder = tuple(np.sort(n[comb-1]))
         matrix_elem.append(integrals[inder])
     
