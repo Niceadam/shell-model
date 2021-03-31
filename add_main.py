@@ -5,28 +5,42 @@ from itertools import combinations, product
 from sympy.utilities.iterables import multiset_permutations
 import scipy.special as sp
 from scipy.integrate import dblquad, quad
+from scipy.ndimage.filters import laplace
 from numpy import exp, pi, sqrt
 from tqdm import tqdm
 
 
 ############### Harmonic Basis
 
-# Parameters
-mw = 1
-lener = 5.2 # integration bound
-tol = 1e-6 # tolerance for integration
+lener = 5 # integration bound
+tol = 1e-3 # tolerance for integration
 
-@np.vectorize
-def harmonic_potential(x):
-    return 0.5*mw*x**2
-        
+########### Harmonic Basis
+m = 1
+w = 1
+hbar = 1
+mwh = m*w/hbar
+
 def harmonic_basis(n):
     """Creates 1D hamonic oscillator basis: Hermite
     """
     
-    normer = 1/sqrt(2**n * factorial(n)) * pow(mw/pi, 1/4)
-    wave_rad = lambda x: normer * exp(-mw*x**2 / 2) * sp.eval_hermite(n,sqrt(mw)*x)
+    normer = 1/sqrt(2**n * factorial(n)) * pow(mwh / pi, 1/4)
+    wave_rad = lambda x: normer * exp(-mwh/2 * x**2) * sp.eval_hermite(n,sqrt(mwh)*x)
     return np.vectorize(wave_rad)
+
+########### Potential
+
+def harmonic_potential(x, m, w):
+    return 0.5*m*w*x**2
+
+def woods_saxon_potential(x, V0, a, A):
+    inper = (abs(x) - 1.25*pow(A, 1/3)) / a
+    return -V0 / (1+exp(inper))
+    
+#potential = lambda x: harmonic_potential(x, 2, 1)
+potential = lambda x: woods_saxon_potential(x, 1, 0.5, 16)
+#potential = lambda x: np.sin(x)
 
 ########### Slater creation
 def create_slaters(states_num, particles):
@@ -41,7 +55,7 @@ def create_slaters(states_num, particles):
 def twobody_element(i, j, k, l, b):
     """<ij|kl> - <ij|lk> element"""
     inter = lambda x1, x2: b[i](x1)*b[j](x2) *exp(-(x2-x1)**2)* (b[k](x1)*b[l](x2) - b[l](x1)*b[k](x2))
-    return dblquad(inter, 0,lener,0,lener, epsabs=tol)[0]
+    return dblquad(inter, -lener, lener, -lener, lener, epsabs=tol)[0]
 
 def create_elements2(N_sp, basis):
     elems = dict()
@@ -55,8 +69,9 @@ def create_elements2(N_sp, basis):
 def onebody_element(i, j, b):
     """<i|t + v|j> element"""
     
-    hterm = lambda x: b[i](x) * b[j](x) * (0.5*(2*j + 1 - x**2) + harmonic_potential(x))
-    return quad(hterm, 0,lener, epsabs=tol)[0]
+    hterm = lambda x: b[i](x)*b[j](x) * (-0.5 * mwh**2 * (mwh*x**2-2*j-1) + potential(x))
+    return quad(hterm, -lener-1, lener+1, epsabs=tol)[0]
+
 
 def create_elements1(N_sp, basis):
     elems = dict()

@@ -16,17 +16,17 @@ import pickle
 ##############################################################################
 
 # Read elements
-N_sp = 12
+N_sp = 4
 
-filer = "dump{}.pickle".format(N_sp)
-with open(filer, "rb") as f:
+with open("dump{}_2.pickle".format(N_sp), "rb") as f:
     elements2 = pickle.load(f)
+
+with open("dump{}_1.pickle".format(N_sp), "rb") as f:
     elements1 = pickle.load(f)
     elements0 = pickle.load(f)
 
 # Quantum numbers and Basis
-n = np.arange(N_sp)
-basis = [harmonic_basis(ni) for ni in n]
+basis = [harmonic_basis(ni) for ni in np.arange(N_sp)]
 
 # Main function
 def main(N_particles):
@@ -44,7 +44,7 @@ def main(N_particles):
     # Build Hamiltonian matrix
     # Add single-particle energies to diagonal elements
     H = np.diag(slater_energies)
-    opers = [2**(N_sp-1-x) for x in range(N_sp)]
+    opers = [1 << (N_sp-1-x) for x in range(N_sp)]
     slaters_int = [int(slate, 2) for slate in slaters_m]
     
     for i, slate_main in tqdm(enumerate(slaters_int)):
@@ -53,13 +53,15 @@ def main(N_particles):
         # 1-body
         for (creat, destr), inter in elements1.items():
             if slatebin[destr] == '1' and slatebin[creat] == '0':
-                slate = slate_main ^ (opers[destr] + opers[creat])
-                phaser = slatebin[:destr].count('1')
-                phaser += slatebin[:creat].count('1')
-                if destr < creat: phaser -= 1
-                    
-                phase = 1 if phaser % 2 == 0 else -1
                 
+                slate = slate_main ^ (opers[destr] + opers[creat])
+
+                if destr < creat:
+                    phaser = slatebin[destr:creat].count('1') - 1
+                else:
+                    phaser = slatebin[creat:destr].count('1')
+                    
+                phase = 1 if phaser & 1 == 0 else -1
                 j = slaters_int.index(slate)
                 H[i,j] += inter * phase
             
@@ -67,16 +69,15 @@ def main(N_particles):
         for (creat1, creat2, destr1, destr2), inter in elements2.items():
             if slatebin[destr1] == slatebin[destr2] == '1':
                 slate = slate_main ^ (opers[destr1] + opers[destr2])
-                phaser = slatebin[:destr2].count('1')
-                phaser += slatebin[:destr1].count('1')
                 slatebin = binary_repr(slate, N_sp)
+                
+                phaser = slatebin[destr1:destr2].count('1')
                 
                 if slatebin[creat1] == slatebin[creat2] == '0':
                     slate ^= opers[creat1] + opers[creat2]
-                    phaser += slatebin[:creat2].count('1')
-                    phaser += slatebin[:creat1].count('1')
-                    phase = 1 if phaser % 2 == 0 else -1
+                    phaser += slatebin[creat1:creat2].count('1')
                     
+                    phase = 1 if phaser & 1 == 0 else -1
                     j = slaters_int.index(slate)
                     H[i,j] += inter * phase
                 
@@ -84,7 +85,6 @@ def main(N_particles):
     H = H + H.T - np.diag(H.diagonal())
     plt.figure()
     plt.imshow(H)
-    plt.title(N_particles)
     
     # Diagonalize the Hamiltonian matrix
     eigs, vecs = linalg.eig(H)
@@ -95,13 +95,25 @@ def main(N_particles):
         
 #################################
 #
+#%%
 
-for N_particles in range(1, 12):
-    eigs, vecs, slaters = main(N_particles)
-    vecs = np.square(vecs)
+N_particles = 1
+eigs, vecs, slaters = main(N_particles)
+vecs = np.square(vecs)
+
+plt.figure()
+plt.bar(np.arange(len(slaters)), vecs[0])
+plt.title('N={}, states={}'.format(N_particles, N_sp))
+plt.xlabel('Slater no.')
+plt.ylabel('Coefficient$^2$')
+
+#%%
+# for N_particles in range(1, 5):
+#     eigs, vecs, slaters = main(N_particles)
+#     vecs = np.square(vecs)
     
-    # plt.figure()
-    # plt.bar(np.arange(len(slaters)), vecs[0])
-    # plt.title('N={}, states={}'.format(N_particles, N_sp))
-    # plt.xlabel('Slater no.')
-    # plt.ylabel('Coefficient$^2$')
+#     plt.figure()
+#     plt.bar(np.arange(len(slaters)), vecs[0])
+#     plt.title('N={}, states={}'.format(N_particles, N_sp))
+#     plt.xlabel('Slater no.')
+#     plt.ylabel('Coefficient$^2$')
