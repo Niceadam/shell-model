@@ -22,10 +22,10 @@ import pickle
 def main(N_particles, N_sp):
     # Number of particles
     
-    with open("dump/dump14-2-2w-2m.pickle", "rb") as f:
+    with open("dump/dump13-2-normal.pickle", "rb") as f:
         elements2 = pickle.load(f)
     
-    with open("dump/dump80-harmonic2-2m.pickle", "rb") as f:
+    with open("dump/dump150-woods.pickle", "rb") as f:
         elements1 = pickle.load(f)
         elements0 = pickle.load(f)
     
@@ -41,9 +41,6 @@ def main(N_particles, N_sp):
             if i >= N_sp:
                 del elements1[key]
                 break
-        
-    # Quantum numbers and Basis
-    basis = [harmonic_basis(n) for n in range(N_sp)]
     
     # Create possible Slater determinants
     slaters_m = create_slaters(N_sp, N_particles)
@@ -59,7 +56,7 @@ def main(N_particles, N_sp):
     opers = [1 << (N_sp-1-x) for x in range(N_sp)]
     slaters_int = [int(slate, 2) for slate in slaters_m]
     
-    scaler = 1.6 # 2-body element interaction scaling factor
+    scaler = 1 / sqrt(2*pi) / 0.5 # 2-body element interaction scaling factor
     
     for i, slate_main in tqdm(enumerate(slaters_int)):
         slatebin = slaters_m[i]
@@ -77,21 +74,21 @@ def main(N_particles, N_sp):
                 H[i,j] += inter * phase
             
         # 2-body
-        # for (creat1, creat2, destr1, destr2), inter in elements2.items():
-        #     if slatebin[destr1] == slatebin[destr2] == '1':
-        #         slate = slate_main ^ (opers[destr1] + opers[destr2])
+        for (creat1, creat2, destr1, destr2), inter in elements2.items():
+            if slatebin[destr1] == slatebin[destr2] == '1':
+                slate = slate_main ^ (opers[destr1] + opers[destr2])
                 
-        #         phaser = slatebin[destr1:destr2].count('1')
-        #         slatebin = binary_repr(slate, N_sp)
+                phaser = slatebin[destr1:destr2].count('1')
+                slatebin = binary_repr(slate, N_sp)
                 
-        #         if slatebin[creat1] == slatebin[creat2] == '0':
-        #             slate ^= opers[creat1] + opers[creat2]
+                if slatebin[creat1] == slatebin[creat2] == '0':
+                    slate ^= opers[creat1] + opers[creat2]
         
-        #             phaser += slatebin[creat1:creat2].count('1')
-        #             phase = 1 if phaser & 1 == 0 else -1
+                    phaser += slatebin[creat1:creat2].count('1')
+                    phase = 1 if phaser & 1 == 0 else -1
         
-        #             j = slaters_int.index(slate)
-        #             H[i,j] += scaler * inter * phase
+                    j = slaters_int.index(slate)
+                    H[i,j] += scaler * inter * phase
                 
     # Symmetrize
     H = H + H.T - np.diag(H.diagonal())
@@ -105,43 +102,60 @@ def main(N_particles, N_sp):
     return eigs, vecs, slaters_m
         
 #################################
-#
 #%%
 
-N_particles = 2
+N_particles = 1
 excit = 5   
 
 eigen = []
-N = range(5, 30)
+N = range(5, 90)
+
 for Nsp in N:
     eigs, vecs, slaters = main(N_particles, Nsp)
     eigen.append(eigs[:excit])
     vecs = np.square(vecs)
 
 eigenm = np.array(eigen)
-# plt.figure()
-# plt.bar(np.arange(len(slaters)), vecs[0])
-# plt.xlabel('Slater no.')
-# plt.ylabel('Coefficient$^2$')
+plt.bar(np.arange(len(slaters)), vecs[0])
+plt.xlabel('Slater no.')
+plt.ylabel('Coefficient$^2$')
 print(eigs[:excit])
 
 #%%
 
-# ### Hamronic (2, 1) - one-body only
-true = sqrt(2) * (np.arange(excit) + 0.5)
+# For 1 particle
+plt.figure()
+x = np.linspace(-8, 8, 200)
+basis = [harmonic_basis(n) for n in range(100)]
+
+final = sum(b(x)*v for b, v in zip(basis, vecs[4]))
+
+plt.plot(x, final)
+plt.figure()
+
+
+#%%
+
+# ### Harmonic (2, 1) - one-body only
+#true = sqrt(2) * (np.arange(excit) + 0.5)
+# #### Harmonic (1, 1)- one-body only
+#true = (np.arange(excit) + 0.5)
 #print(sum(true))
-#true = np.array([0.11663698, 0.46060593, 1.01698817, 1.76716165, 2.69177977])
+# Woods-Saxon
+true = np.array([0.11663698, 0.46060593, 1.01698817, 1.76716165, 2.69177977])
+
+# Harmonic (1, 1) - 2-body normal
+#true = np.array([1.65240159, 2.65243612, 4.        , 4.0267893 , 5.        ])
 
 # Harmonic2 - 13 states - scaler=1.6
 #true = np.array([2.82842716, 4.24264089, 5.65685449, 5.65687316, 7.07108675])
 # Harmonic2 - 15 states - 0.1w - scaler=1.6
 #true = np.array([1.5740729 , 3.01420091, 5.64408384, 5.70444208, 7.03366329])
-# 14 states - 2w
-#true = np.array([2.61544208, 4.03574265, 5.650836  , 5.73518029, 7.05458893])
-# 13 states - 2b - 2body
-#true = np.array([2.59689249, 4.01772863, 5.58112713, 5.6624014 , 6.98309284])
-# 40 states- 2b -  1body
-#true = np.array([2.82842712, 4.24264069, 5.65685425, 5.65685425, 7.07106781])
+# 15 states - 2w
+#true = np.array([2.6154171 , 4.03567671, 5.65083575, 5.73517805, 7.05457682])
+# 13 states - 2m - 2body
+#true = np.array([2.59689061, 4.01772065, 5.58111776, 5.6623937 , 6.98309154])
+# 40 states- 2m -  1body
 
 
 eigen = (abs(eigenm-true) / true * 100).T
@@ -153,7 +167,7 @@ for n, row in enumerate(eigen):
     plt.plot(N, np.log(row), mark[n+2], label=strin, markersize=4, c=colour[n])
     plt.plot(N, np.log(row), c=colour[n])
 
-plt.title('Harmonic-2 | Normal Gaussian')
+plt.title('')
 plt.legend()
 plt.xlabel('Number of basis states used')
 plt.ylabel('log(error %)')

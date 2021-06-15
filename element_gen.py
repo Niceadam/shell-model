@@ -30,8 +30,8 @@ with open("dump/dump{}-2-2w-2m.pickle".format(N_sp), "wb") as f:
 #%%
 ## 1-body - for given potential
 
-basis = [harmonic_basis(n) for n in range(150)]
-N_sp = 80
+basis = [harmonic_basis(n) for n in range(100)]
+N_sp = 30
 
 # with open("dump/dump150-woods.pickle".format(N_sp), "rb") as f:
 #     elements1 = pickle.load(f)

@@ -11,11 +11,11 @@ from tqdm import tqdm
 from multiprocessing import Pool
 
 tol = 1e-4 # tolerance for integration
-bnd = 12 # Integration bound
+bnd = 50 # Integration bound
 
 ########### Harmonic Basis
-m = 2
-w = 1
+m = 1
+w = 2
 hbar = 1
 mwh = m*w/hbar
 
@@ -42,6 +42,7 @@ def woods_saxon_potential(x, V0, a, A):
         return -V0 / (1+exp(inper))
     
 potential = lambda x: harmonic_potential(x, 2, 1)
+#potential = lambda x: harmonic_potential(x, 1, 1)
 #potential = lambda x: woods_saxon_potential(x, 10, 0.2, 20)+10
 #potential = lambda x: square_well(x, 4)
 
@@ -63,7 +64,7 @@ def create_slaters(states_num, particles):
 def twobody_element(i, j, k, l, b):
     """<ij|kl> - <ij|lk> element"""
     
-    inter = lambda x1, x2: b[i](x1)*b[j](x2) *exp(-2*(x2-x1)**2)* (b[k](x1)*b[l](x2) - b[l](x1)*b[k](x2))
+    inter = lambda x1, x2: b[i](x1)*b[j](x2) *exp(-1*(x2-x1)**2)* (b[k](x1)*b[l](x2) - b[l](x1)*b[k](x2))
     return dblquad(inter, -bnd, bnd, -bnd, bnd, epsabs=tol)[0]
 
 def create_elements2(N_sp, basis):
