@@ -9,6 +9,7 @@ import pickle
 # Generates all 2-body and 1-body elements for given number of states
 ##############################################################################
 
+#%%
 #Number of single-particle states
 N_sp = 14
 
@@ -30,8 +31,8 @@ with open("dump/dump{}-2-2w-2m.pickle".format(N_sp), "wb") as f:
 #%%
 ## 1-body - for given potential
 
-basis = [harmonic_basis(n) for n in range(100)]
-N_sp = 30
+N_sp = 100
+basis = [harmonic_basis(n) for n in range(N_sp)]
 
 # with open("dump/dump150-woods.pickle".format(N_sp), "rb") as f:
 #     elements1 = pickle.load(f)
@@ -42,7 +43,7 @@ elements0 = [elements1.pop((k,k)) for k in range(N_sp)]
 
 # elements1.update(dicter)
 # elements0[(N_sp-1, N_sp-1)] = dicter.pop((N_sp-1, N_sp-1))
-
-with open("dump/dump{}-harmonic2-2m.pickle".format(N_sp), "wb") as f:
+#%%
+with open("dump/dump{}-woodscorrug.pickle".format(N_sp), "wb") as f:
     pickle.dump(elements1, f)
     pickle.dump(elements0, f)

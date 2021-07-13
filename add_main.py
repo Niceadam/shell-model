@@ -15,13 +15,15 @@ bnd = 50 # Integration bound
 
 ########### Harmonic Basis
 m = 1
-w = 2
+w = 1
 hbar = 1
 mwh = m*w/hbar
 
-def harmonic_basis(n):
+def harmonic_basis(n, m):
     """Creates 1D hamonic oscillator basis: Hermite
     """
+    mwh = m*w/hbar
+    
     normer = 2**(-n/2) / sqrt(factorial(n)) * pow(mwh / pi, 1/4)
     wave_rad = lambda x: normer * exp(-mwh/2 * x**2) * eval_hermite(n, sqrt(mwh)*x)
     return np.vectorize(wave_rad)
@@ -40,10 +42,20 @@ def woods_saxon_potential(x, V0, a, A):
         return 0 
     else:
         return -V0 / (1+exp(inper))
+
+@np.vectorize
+def woods_corrugated(x, V0, a, A):
+    inper = (abs(x) - 1.25*pow(A, 1/3)) / a
     
-potential = lambda x: harmonic_potential(x, 2, 1)
+    if inper > 80: 
+        return 0 
+    else:
+        return -V0 / (1+exp(inper)) + np.sin(x)
+    
+#potential = lambda x: harmonic_potential(x, 2, 1)
 #potential = lambda x: harmonic_potential(x, 1, 1)
 #potential = lambda x: woods_saxon_potential(x, 10, 0.2, 20)+10
+potential = lambda x: woods_corrugated(x, 10, 0.2, 20)+10
 #potential = lambda x: square_well(x, 4)
 
 # x = np.linspace(-8, 8, 100)

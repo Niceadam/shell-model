@@ -2,6 +2,8 @@ import numpy as np
 from math import sqrt
 import matplotlib.pyplot as plt
 from matplotlib.colors import BASE_COLORS as colour
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D as mark
 from numpy import linalg
 from numpy import binary_repr
@@ -25,7 +27,7 @@ def main(N_particles, N_sp):
     with open("dump/dump13-2-normal.pickle", "rb") as f:
         elements2 = pickle.load(f)
     
-    with open("dump/dump150-woods.pickle", "rb") as f:
+    with open("dump/dump100-woodscorrug.pickle", "rb") as f:
         elements1 = pickle.load(f)
         elements0 = pickle.load(f)
     
@@ -56,7 +58,8 @@ def main(N_particles, N_sp):
     opers = [1 << (N_sp-1-x) for x in range(N_sp)]
     slaters_int = [int(slate, 2) for slate in slaters_m]
     
-    scaler = 1 / sqrt(2*pi) / 0.5 # 2-body element interaction scaling factor
+    scaler = 1 / sqrt(pi) # 2-body element interaction scaling factor
+    scaler *= 10
     
     for i, slate_main in tqdm(enumerate(slaters_int)):
         slatebin = slaters_m[i]
@@ -102,36 +105,86 @@ def main(N_particles, N_sp):
     return eigs, vecs, slaters_m
         
 #################################
+
 #%%
 
-N_particles = 1
-excit = 5   
+N_particles = 2
+N_sp = 13
 
-eigen = []
-N = range(5, 90)
+eigs, vecs0, slaters = main(N_particles, N_sp)
+vecs = np.square(vecs0)
+cmap = ['blue', 'green', 'orange', 'red']
 
-for Nsp in N:
-    eigs, vecs, slaters = main(N_particles, Nsp)
-    eigen.append(eigs[:excit])
-    vecs = np.square(vecs)
+fig = plt.figure()
+ax = fig.gca(projection='3d')
 
-eigenm = np.array(eigen)
-plt.bar(np.arange(len(slaters)), vecs[0])
-plt.xlabel('Slater no.')
-plt.ylabel('Coefficient$^2$')
-print(eigs[:excit])
+lim = 18
+for i in [0, 1, 2, 3]:
+    x = np.arange(len(slaters))[:lim]
+    y = i
+    dz = vecs[i][:lim]
+    ax.bar3d(x, y, 0, 0.7, 0.18, dz, color=cmap[i], shade=True)
+
+ax.set_xlabel('Determinant number')
+ax.set_ylabel('Excitation')
+ax.set_zlabel('Magnitude of Coefficient')
+ax.set_yticks([0, 1, 2, 3])
+
+
+#%%
+
+# eigen = []
+# excit = 5
+# N = range(excit, N_sp)
+# for Nsp in N:
+#     eigs, vecs, slaters = main(N_particles, Nsp)
+#     eigen.append(eigs[:excit])
+
+# eigenm = np.array(eigen)
 
 #%%
 
 # For 1 particle
-plt.figure()
-x = np.linspace(-8, 8, 200)
-basis = [harmonic_basis(n) for n in range(100)]
+# plt.figure()
+# x = np.linspace(-8, 8, N_sp)
+# basis = [harmonic_basis(n, 1) for n in range(100)]
 
-final = sum(b(x)*v for b, v in zip(basis, vecs[4]))
+# state = 2
+# wave = sum(-base(x) * vec for base, vec in zip(basis, vecs0[state]))
+# plt.plot(x, wave, label='Computed')
+    
+# plt.plot(x, harmonic_basis(state, 2)(x), label="Analytical")
+# plt.legend()
 
-plt.plot(x, final)
-plt.figure()
+#%%
+
+# # For 2 particle
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+
+# x = np.linspace(-3, 3, 200)
+# x1, x2 = np.meshgrid(x, x)
+
+# basis_x1 = [harmonic_basis(n)(x1) for n in range(20)]
+# basis_x2 = [harmonic_basis(n)(x2) for n in range(20)]
+# wave = np.zeros((200, 200))
+
+# def slaterfunc(i, j):
+#     return basis_x1[i] * basis_x2[j] - basis_x1[j] * basis_x2[i]
+
+# state = 4
+# for slater, coeff in tqdm(zip(slaters, vecs0[state])):
+#     i, j = slater.find('1'), slater.rfind('1')
+#     wave += coeff * slaterfunc(i, j)
+
+# #density /= np.sqrt(2)
+# density = wave**2
+
+# ax.plot_surface(x1, x2, density, cmap=cm.gnuplot)
+# ax.set_xlabel('x1')
+# ax.set_ylabel('x2')
+# ax.set_zticks([])
+# plt.figure()
 
 
 #%%
@@ -142,29 +195,41 @@ plt.figure()
 #true = (np.arange(excit) + 0.5)
 #print(sum(true))
 # Woods-Saxon
-true = np.array([0.11663698, 0.46060593, 1.01698817, 1.76716165, 2.69177977])
+#true = np.array([0.11663698, 0.46060593, 1.01698817, 1.76716165, 2.69177977])
 
 # Harmonic (1, 1) - 2-body normal
 #true = np.array([1.65240159, 2.65243612, 4.        , 4.0267893 , 5.        ])
 
-# Harmonic2 - 13 states - scaler=1.6
-#true = np.array([2.82842716, 4.24264089, 5.65685449, 5.65687316, 7.07108675])
-# Harmonic2 - 15 states - 0.1w - scaler=1.6
-#true = np.array([1.5740729 , 3.01420091, 5.64408384, 5.70444208, 7.03366329])
+# Harmonic2 - 13 states
+#true = np.array([2.68238388, 4.10073489, 5.65300188, 5.70059422, 7.06053617])
+# Harmonic2 - 15 states - 0.1w
+#true = np.array([2.68910518, 4.10723662, 5.65489449, 5.66216099, 7.0653616 ])
 # 15 states - 2w
-#true = np.array([2.6154171 , 4.03567671, 5.65083575, 5.73517805, 7.05457682])
+#true = np.array([2.7249395 , 4.14214998, 5.65363939, 5.69466124, 7.06234717])
+
+# Woods - 13 states - 1
+#true = np.array([0.55043791, 1.08656227, 1.45083559, 1.86521063, 2.23460314])
+# Woods - 15 states - 0.1w
+#true = np.array([0.50179537, 1.04039784, 1.45649078, 1.86111692, 2.23083541])
+# Woods - 15 states - 2w
+# true = 
+
+# Woods-corrug - 100 states - 1
+#true = np.array([0.11663698, 0.46060563, 1.01698817, 1.76716161, 2.69177977])
+
 # 13 states - 2m - 2body
 #true = np.array([2.59689061, 4.01772065, 5.58111776, 5.6623937 , 6.98309154])
 # 40 states- 2m -  1body
+true = eigenm[-1][:]
 
 
 eigen = (abs(eigenm-true) / true * 100).T
 colour = list(colour.keys())
 mark = list(mark.markers.keys())
 
-for n, row in enumerate(eigen):
+for n, row in enumerate(eigen[:-1]):
     strin = str(n) + '-excited' if n != 0 else 'ground'
-    plt.plot(N, np.log(row), mark[n+2], label=strin, markersize=4, c=colour[n])
+    plt.plot(N, np.log(row), mark[n+2], label=strin, markersize=2, c=colour[n])
     plt.plot(N, np.log(row), c=colour[n])
 
 plt.title('')
