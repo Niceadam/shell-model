@@ -1,5 +1,6 @@
 import numpy as np
 from math import sqrt
+import matplotlib as matt
 import matplotlib.pyplot as plt
 from matplotlib.colors import BASE_COLORS as colour
 from matplotlib import cm
@@ -27,7 +28,7 @@ def main(N_particles, N_sp):
     with open("dump/dump13-2-normal.pickle", "rb") as f:
         elements2 = pickle.load(f)
     
-    with open("dump/dump100-woodscorrug.pickle", "rb") as f:
+    with open("dump/dump130-harmonic2.pickle", "rb") as f:
         elements1 = pickle.load(f)
         elements0 = pickle.load(f)
     
@@ -59,7 +60,7 @@ def main(N_particles, N_sp):
     slaters_int = [int(slate, 2) for slate in slaters_m]
     
     scaler = 1 / sqrt(pi) # 2-body element interaction scaling factor
-    scaler *= 10
+    scaler *= 1
     
     for i, slate_main in tqdm(enumerate(slaters_int)):
         slatebin = slaters_m[i]
@@ -108,27 +109,30 @@ def main(N_particles, N_sp):
 
 #%%
 
-N_particles = 2
-N_sp = 13
+# Slater Profiles
+
+N_particles = 1
+N_sp = 100
 
 eigs, vecs0, slaters = main(N_particles, N_sp)
 vecs = np.square(vecs0)
-cmap = ['blue', 'green', 'orange', 'red']
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
+# #%%
+# cmap = ['blue', 'green', 'orange', 'red']
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
 
-lim = 18
-for i in [0, 1, 2, 3]:
-    x = np.arange(len(slaters))[:lim]
-    y = i
-    dz = vecs[i][:lim]
-    ax.bar3d(x, y, 0, 0.7, 0.18, dz, color=cmap[i], shade=True)
+# lim = 18
+# for i in [0, 1, 2, 3]:
+#     x = np.arange(len(slaters))[:lim]
+#     y = i
+#     dz = vecs[i][:lim]
+#     ax.bar3d(x, y, 0, 0.7, 0.18, dz, color=cmap[i], shade=True)
 
-ax.set_xlabel('Determinant number')
-ax.set_ylabel('Excitation')
-ax.set_zlabel('Magnitude of Coefficient')
-ax.set_yticks([0, 1, 2, 3])
+# ax.set_xlabel('Determinant number')
+# ax.set_ylabel('Excitation')
+# ax.set_zlabel('Magnitude of Coefficient')
+# ax.set_yticks([0, 1, 2, 3])
 
 
 #%%
@@ -144,35 +148,46 @@ ax.set_yticks([0, 1, 2, 3])
 
 #%%
 
-# For 1 particle
-# plt.figure()
-# x = np.linspace(-8, 8, N_sp)
-# basis = [harmonic_basis(n, 1) for n in range(100)]
+N_particles = 1
+N_sp = 100
 
-# state = 2
-# wave = sum(-base(x) * vec for base, vec in zip(basis, vecs0[state]))
-# plt.plot(x, wave, label='Computed')
+eigs, vecs0, slaters = main(N_particles, N_sp)
+vecs = np.square(vecs0)
+
+# For 1 particle
+plt.figure()
+x = np.linspace(-6, 6, N_sp)
+basis = [harmonic_basis(n, 1)(x) for n in range(N_sp)]
+
+state = 2
+wave = sum(base * vec for base, vec in zip(basis, vecs[state])) 
+
+plt.plot(x, wave, label='Computed')
+plt.xlabel("x", size=18)
+plt.ylabel("$\Psi$", size=18)
     
-# plt.plot(x, harmonic_basis(state, 2)(x), label="Analytical")
-# plt.legend()
+plt.plot(x, harmonic_basis(state, 2)(x), label="Analytical")
+plt.yticks([])
+plt.legend()
 
 #%%
+# Density plots
 
 # # For 2 particle
 # fig = plt.figure()
 # ax = fig.gca(projection='3d')
 
-# x = np.linspace(-3, 3, 200)
+# x = np.linspace(-4, 4, 200)
 # x1, x2 = np.meshgrid(x, x)
 
-# basis_x1 = [harmonic_basis(n)(x1) for n in range(20)]
-# basis_x2 = [harmonic_basis(n)(x2) for n in range(20)]
+# basis_x1 = [harmonic_basis(n, 1)(x1) for n in range(20)]
+# basis_x2 = [harmonic_basis(n, 1)(x2) for n in range(20)]
 # wave = np.zeros((200, 200))
 
 # def slaterfunc(i, j):
 #     return basis_x1[i] * basis_x2[j] - basis_x1[j] * basis_x2[i]
 
-# state = 4
+# state = 0
 # for slater, coeff in tqdm(zip(slaters, vecs0[state])):
 #     i, j = slater.find('1'), slater.rfind('1')
 #     wave += coeff * slaterfunc(i, j)
@@ -181,6 +196,7 @@ ax.set_yticks([0, 1, 2, 3])
 # density = wave**2
 
 # ax.plot_surface(x1, x2, density, cmap=cm.gnuplot)
+# ax.view_init(30, 50)
 # ax.set_xlabel('x1')
 # ax.set_ylabel('x2')
 # ax.set_zticks([])

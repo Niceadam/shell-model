@@ -6,7 +6,7 @@ from itertools import combinations, combinations_with_replacement
 from sympy.utilities.iterables import multiset_permutations
 from scipy.special import eval_hermite
 from scipy.integrate import dblquad, quad
-from numpy import pi, inf
+from numpy import pi
 from tqdm import tqdm
 from multiprocessing import Pool
 
