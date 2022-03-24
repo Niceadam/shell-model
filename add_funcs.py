@@ -9,7 +9,6 @@ import scipy.integrate
 from math import factorial
 from sympy.combinatorics.permutations import Permutation
 from read_lpt import read_lpt, read_lpt_exp
-import copy
 from tqdm import tqdm
 
 dbl_quad = scipy.integrate.dblquad

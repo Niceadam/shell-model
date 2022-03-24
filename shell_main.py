@@ -111,45 +111,44 @@ def main(N_particles, N_sp):
 
 # Slater Profiles
 
-N_particles = 1
-N_sp = 100
+N_particles = 11
+N_sp = 13
 
 eigs, vecs0, slaters = main(N_particles, N_sp)
 vecs = np.square(vecs0)
 
-# #%%
-# cmap = ['blue', 'green', 'orange', 'red']
-# fig = plt.figure()
-# ax = fig.gca(projection='3d')
+cmap = ['blue', 'green', 'orange', 'red']
+fig = plt.figure()
+ax = fig.gca(projection='3d')
 
-# lim = 18
-# for i in [0, 1, 2, 3]:
-#     x = np.arange(len(slaters))[:lim]
-#     y = i
-#     dz = vecs[i][:lim]
-#     ax.bar3d(x, y, 0, 0.7, 0.18, dz, color=cmap[i], shade=True)
+lim = 18
+for i in [0, 1, 2, 3]:
+    x = np.arange(len(slaters))[:lim]
+    y = i
+    dz = vecs[i][:lim]
+    ax.bar3d(x, y, 0, 0.7, 0.18, dz, color=cmap[i], shade=True)
 
-# ax.set_xlabel('Determinant number')
-# ax.set_ylabel('Excitation')
-# ax.set_zlabel('Magnitude of Coefficient')
-# ax.set_yticks([0, 1, 2, 3])
+ax.set_xlabel('Determinant number')
+ax.set_ylabel('Excitation')
+ax.set_zlabel('Magnitude of Coefficient')
+ax.set_yticks([0, 1, 2, 3])
 
-
-#%%
-
-# eigen = []
-# excit = 5
-# N = range(excit, N_sp)
-# for Nsp in N:
-#     eigs, vecs, slaters = main(N_particles, Nsp)
-#     eigen.append(eigs[:excit])
-
-# eigenm = np.array(eigen)
 
 #%%
 
-N_particles = 1
-N_sp = 100
+eigen = []
+excit = 5
+N = range(excit, N_sp)
+for Nsp in N:
+    eigs, vecs, slaters = main(N_particles, Nsp)
+    eigen.append(eigs[:excit])
+
+eigenm = np.array(eigen)
+
+#%%
+
+N_particles = 10
+N_sp = 13
 
 eigs, vecs0, slaters = main(N_particles, N_sp)
 vecs = np.square(vecs0)
